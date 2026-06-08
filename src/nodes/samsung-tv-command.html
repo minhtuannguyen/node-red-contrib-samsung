@@ -1,0 +1,204 @@
+<script type="text/javascript">
+    (function () {
+        var SAMSUNG_KEYS = [
+            // Power
+            { value: 'KEY_POWER',   label: 'Power' },
+            // Navigation
+            { value: 'KEY_UP',      label: 'Up' },
+            { value: 'KEY_DOWN',    label: 'Down' },
+            { value: 'KEY_LEFT',    label: 'Left' },
+            { value: 'KEY_RIGHT',   label: 'Right' },
+            { value: 'KEY_ENTER',   label: 'Enter / OK' },
+            { value: 'KEY_RETURN',  label: 'Return / Back' },
+            { value: 'KEY_EXIT',    label: 'Exit' },
+            // Home / Menu
+            { value: 'KEY_HOME',    label: 'Home' },
+            { value: 'KEY_MENU',    label: 'Menu' },
+            { value: 'KEY_TOOLS',   label: 'Tools' },
+            { value: 'KEY_INFO',    label: 'Info' },
+            // Volume
+            { value: 'KEY_VOLUP',   label: 'Volume Up' },
+            { value: 'KEY_VOLDOWN', label: 'Volume Down' },
+            { value: 'KEY_MUTE',    label: 'Mute' },
+            // Channels
+            { value: 'KEY_CHUP',    label: 'Channel Up' },
+            { value: 'KEY_CHDOWN',  label: 'Channel Down' },
+            // Inputs
+            { value: 'KEY_SOURCE',  label: 'Source' },
+            { value: 'KEY_HDMI',    label: 'HDMI' },
+            // Playback
+            { value: 'KEY_PLAY',    label: 'Play' },
+            { value: 'KEY_PAUSE',   label: 'Pause' },
+            { value: 'KEY_STOP',    label: 'Stop' },
+            { value: 'KEY_FF',      label: 'Fast Forward' },
+            { value: 'KEY_REWIND',  label: 'Rewind' },
+            { value: 'KEY_RECORD',  label: 'Record' },
+            // Numbers
+            { value: 'KEY_0',       label: '0' },
+            { value: 'KEY_1',       label: '1' },
+            { value: 'KEY_2',       label: '2' },
+            { value: 'KEY_3',       label: '3' },
+            { value: 'KEY_4',       label: '4' },
+            { value: 'KEY_5',       label: '5' },
+            { value: 'KEY_6',       label: '6' },
+            { value: 'KEY_7',       label: '7' },
+            { value: 'KEY_8',       label: '8' },
+            { value: 'KEY_9',       label: '9' },
+            // Colour buttons
+            { value: 'KEY_RED',     label: 'Red' },
+            { value: 'KEY_GREEN',   label: 'Green' },
+            { value: 'KEY_YELLOW',  label: 'Yellow' },
+            { value: 'KEY_BLUE',    label: 'Blue' },
+        ];
+
+        RED.nodes.registerType('samsung-tv-command', {
+            category: 'Samsung',
+            defaults: {
+                name:       { value: '' },
+                tv:         { value: '', type: 'samsung-tv-config', required: true },
+                mode:       { value: 'key' },
+                defaultKey: { value: 'KEY_MUTE' },
+                appId:      { value: '' },
+            },
+            inputs: 1,
+            outputs: 2,
+            outputLabels: ['success', 'offline / error'],
+            icon: 'font-awesome/fa-television',
+            paletteLabel: 'TV command',
+            label: function () {
+                if (this.name) return this.name;
+                if (this.mode === 'pair') return 'TV: pair';
+                if (this.mode === 'app')  return 'TV: app ' + (this.appId || '');
+                var key = SAMSUNG_KEYS.find(function (k) { return k.value === this.defaultKey; }, this);
+                return 'TV: ' + (key ? key.label : (this.defaultKey || 'command'));
+            },
+            oneditprepare: function () {
+                var $keySelect = $('#node-input-defaultKey');
+                SAMSUNG_KEYS.forEach(function (k) {
+                    $keySelect.append($('<option>').val(k.value).text(k.label + '  (' + k.value + ')'));
+                });
+                $keySelect.val(this.defaultKey || 'KEY_MUTE');
+
+                function updateVisibility() {
+                    var mode = $('#node-input-mode').val();
+                    $('#row-defaultKey').toggle(mode === 'key');
+                    $('#row-appId').toggle(mode === 'app');
+                    $('#row-pair-hint').toggle(mode === 'pair');
+                }
+                $('#node-input-mode').on('change', updateVisibility);
+                updateVisibility();
+            },
+        });
+    }());
+</script>
+
+<script type="text/html" data-template-name="samsung-tv-command">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-tv"><i class="fa fa-television"></i> TV</label>
+        <input type="text" id="node-input-tv">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-mode"><i class="fa fa-list"></i> Mode</label>
+        <select id="node-input-mode" style="width:70%">
+            <option value="key">Send Key</option>
+            <option value="app">Launch App</option>
+            <option value="pair">Pair TV</option>
+        </select>
+    </div>
+
+    <!-- KEY mode -->
+    <div class="form-row" id="row-defaultKey">
+        <label for="node-input-defaultKey"><i class="fa fa-keyboard-o"></i> Key</label>
+        <select id="node-input-defaultKey" style="width:70%"></select>
+        <div class="form-tips" style="margin-top:4px">
+            Default key sent when <code>msg.payload</code> is empty.
+            Override at runtime with a key string, <code>{ key, hold, repeat, delay }</code>, or an array.
+        </div>
+    </div>
+
+    <!-- APP mode -->
+    <div class="form-row" id="row-appId">
+        <label for="node-input-appId"><i class="fa fa-th"></i> App ID</label>
+        <input type="text" id="node-input-appId" placeholder="e.g. 11101200001" style="width:70%">
+        <div class="form-tips" style="margin-top:4px">
+            Samsung app ID. Can be overridden at runtime via <code>msg.payload</code>.
+        </div>
+    </div>
+
+    <!-- PAIR mode -->
+    <div class="form-row" id="row-pair-hint">
+        <div class="form-tips">
+            <i class="fa fa-info-circle"></i>
+            Trigger this node once to initiate pairing. The TV will show a dialog on screen —
+            <strong>accept it with the TV remote</strong>. The token is then saved automatically
+            to the config node. You only need to do this once.
+        </div>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="samsung-tv-command">
+    <p>Send a command to a Samsung Tizen TV. Three modes are available.</p>
+
+    <h3>Mode: Send Key</h3>
+    <p>Sends a remote-control key press via WebSocket.</p>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">string | object | array</span></dt>
+        <dd>
+            Overrides the key selected in the editor. Accepts:
+            <ul>
+                <li><code>"KEY_MUTE"</code> &mdash; single key string</li>
+                <li><code>{ key: "KEY_VOLUP", repeat: 5, delay: 300 }</code> &mdash; with options</li>
+                <li><code>{ key: "KEY_POWER", hold: 3500 }</code> &mdash; press-and-hold</li>
+                <li>Array of the above for a sequence</li>
+            </ul>
+            Leave empty to use the key selected in the node editor.
+        </dd>
+    </dl>
+
+    <h3>Mode: Launch App</h3>
+    <p>Launches an app on the TV via the local REST API (port 8001).</p>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">string</span></dt>
+        <dd>App ID. Overrides the App ID in the editor when set.</dd>
+    </dl>
+
+    <h3>Mode: Pair TV</h3>
+    <p>
+        Connects to the TV to trigger the on-screen pairing dialog.
+        Accept it with the TV remote — the token is then saved automatically to the config node.
+        Only needed once.
+    </p>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>
+            <b>Success</b>
+            <dl class="message-properties">
+                <dt>payload <span class="property-type">boolean</span></dt>
+                <dd><code>true</code> on success.</dd>
+            </dl>
+        </li>
+        <li>
+            <b>Offline / Error</b>
+            <dl class="message-properties">
+                <dt>payload <span class="property-type">null</span></dt>
+                <dt>status <span class="property-type">string</span></dt>
+                <dd><code>"offline"</code> when TV is unreachable; <code>"error"</code> on failure.</dd>
+                <dt>error <span class="property-type">string</span></dt>
+                <dd>Error detail (only when <code>status</code> is <code>"error"</code>).</dd>
+            </dl>
+        </li>
+    </ol>
+
+    <h3>TV offline behaviour</h3>
+    <p>
+        If the TV is unreachable (hard-powered off), the node outputs on the second output
+        with <code>status: "offline"</code> — no error is raised, no flow is interrupted.
+    </p>
+</script>

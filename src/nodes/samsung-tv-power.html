@@ -1,0 +1,126 @@
+<script type="text/javascript">
+    RED.nodes.registerType('samsung-tv-power', {
+        category: 'Samsung',
+        defaults: {
+            name:                { value: '' },
+            tv:                  { value: '', type: 'samsung-tv-config', required: true },
+            defaultAction:       { value: 'toggle' },
+            wakeRetries:         { value: 12 },
+            wakeRetryInterval:   { value: 8 },
+        },
+        inputs: 1,
+        outputs: 2,
+        icon: 'font-awesome/fa-power-off',
+        paletteLabel: 'TV power',
+        label: function () {
+            return this.name || 'TV: ' + (this.defaultAction || 'toggle');
+        },
+    });
+</script>
+
+<script type="text/html" data-template-name="samsung-tv-power">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-tv"><i class="fa fa-television"></i> TV</label>
+        <input type="text" id="node-input-tv">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-defaultAction"><i class="fa fa-power-off"></i> Action</label>
+        <select id="node-input-defaultAction" style="width:70%">
+            <option value="toggle">Toggle (reverse current state)</option>
+            <option value="on">Turn On</option>
+            <option value="off">Turn Off</option>
+            <option value="status">Status only (no change)</option>
+        </select>
+        <div class="form-tips" style="margin-top:4px">
+            Used for any trigger. Override at runtime by setting <code>msg.payload</code>
+            to <code>true</code>, <code>false</code>, <code>"on"</code>, <code>"off"</code>,
+            <code>"toggle"</code>, or <code>"status"</code>.
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-wakeRetries"><i class="fa fa-refresh"></i> Wake retries</label>
+        <input type="number" id="node-input-wakeRetries" min="0" max="30" style="width:70px">
+        <span style="margin-left:6px;color:#aaa">times &nbsp;(0 = fire-and-forget)</span>
+        <div class="form-tips" style="margin-top:4px">
+            When TV is offline, how many times to check if it has appeared on the network
+            before giving up. Used after Wake-on-LAN or a power-plug event.
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-wakeRetryInterval"><i class="fa fa-clock-o"></i> Retry interval</label>
+        <input type="number" id="node-input-wakeRetryInterval" min="1" max="120" style="width:70px">
+        <span style="margin-left:6px;color:#aaa">seconds between checks</span>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="samsung-tv-power">
+    <p>Control the power state of a Samsung Tizen TV.</p>
+
+    <p>
+        If the TV is unreachable (hard-powered off), it is treated as <b>off</b> &mdash;
+        no error is raised. Power-on when the TV is fully off is handled via
+        <b>Wake-on-LAN</b> (requires MAC address in the config node).
+    </p>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">boolean | string | number</span></dt>
+        <dd>
+            <ul>
+                <li><code>true</code> / <code>"on"</code> / <code>1</code> &mdash; turn on</li>
+                <li><code>false</code> / <code>"off"</code> / <code>0</code> &mdash; turn off</li>
+                <li><code>"toggle"</code> &mdash; reverse current state</li>
+                <li><code>"status"</code> &mdash; report current state without changing it</li>
+            </ul>
+        </dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">boolean</span></dt>
+        <dd>
+            <code>true</code> if the TV is (or was asked to be) on,
+            <code>false</code> if off.
+        </dd>
+        <dt>state <span class="property-type">string</span></dt>
+        <dd>
+            <code>"on"</code>, <code>"standby"</code>, or <code>"offline"</code> &mdash;
+            the detected state before the action, or the expected state after.
+        </dd>
+    </dl>
+
+    <h3>Power-on behaviour</h3>
+    <ul>
+        <li><b>TV offline</b> (hard off / just plugged in) &rarr; sends Wake-on-LAN (if MAC configured),
+            then retries every <em>Retry interval</em> seconds up to <em>Wake retries</em> times
+            until the TV appears on the network. WoL packet is re-sent each retry cycle
+            (UDP is unreliable). Without MAC, just waits and checks.</li>
+        <li><b>TV in standby</b> (soft off, port 8001 reachable) &rarr; <code>KEY_POWER</code> via WebSocket</li>
+        <li><b>TV already on</b> &rarr; no action</li>
+    </ul>
+
+    <h3>Power-off behaviour</h3>
+    <ul>
+        <li><b>TV offline</b> (already off) &rarr; no action, outputs <code>false</code> without error</li>
+        <li><b>TV on or standby</b> &rarr; <code>KEY_POWER</code> via WebSocket</li>
+    </ul>
+
+    <h3>Details</h3>
+    <p>
+        Configure the TV connection (IP, MAC, pairing token) in the
+        <b>samsung-tv-config</b> configuration node.
+    </p>
+    <p>
+        After sending a power command the node does <em>not</em> wait for the TV to fully
+        transition &mdash; it reports the <em>intended</em> final state immediately.
+        Use a delay node or inject node if you need to verify the result afterwards.
+    </p>
+</script>

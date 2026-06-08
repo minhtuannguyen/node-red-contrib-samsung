@@ -1,0 +1,93 @@
+<script type="text/javascript">
+    RED.nodes.registerType('samsung-tv-config', {
+        category: 'config',
+        defaults: {
+            name:          { value: '' },
+            ip:            { value: '', required: true },
+            tvName:        { value: 'NodeRED' },
+            useLegacy:     { value: false },
+            enableLogging: { value: false },
+        },
+        credentials: {
+            mac:   { type: 'text' },
+            token: { type: 'text' },
+        },
+        label: function () {
+            return this.name || this.ip || 'Samsung TV';
+        },
+    });
+</script>
+
+<script type="text/html" data-template-name="samsung-tv-config">
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-config-input-name" placeholder="My Samsung TV">
+    </div>
+
+    <div class="form-row">
+        <label for="node-config-input-ip"><i class="fa fa-globe"></i> IP Address</label>
+        <input type="text" id="node-config-input-ip" placeholder="192.168.1.100">
+        <div class="form-tips">Use a static IP or DHCP reservation for the TV.</div>
+    </div>
+
+    <div class="form-row">
+        <label for="node-config-input-tvName"><i class="fa fa-television"></i> Client Name</label>
+        <input type="text" id="node-config-input-tvName" placeholder="NodeRED">
+        <div class="form-tips">Name shown on the TV pairing dialog.</div>
+    </div>
+
+    <div class="form-row">
+        <label for="node-config-input-mac"><i class="fa fa-wifi"></i> MAC Address</label>
+        <input type="text" id="node-config-input-mac" placeholder="AA:BB:CC:DD:EE:FF">
+        <div class="form-tips">Required for Wake-on-LAN (powering on when TV is fully off).</div>
+    </div>
+
+    <div class="form-row">
+        <label for="node-config-input-token"><i class="fa fa-key"></i> Pairing Token</label>
+        <input type="text" id="node-config-input-token" placeholder="Auto-filled after first pairing">
+        <div class="form-tips">
+            Leave blank for first use. Deploy a power or command node, the TV will show a pairing
+            dialog &mdash; accept it with the TV remote. The token will be saved automatically.
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label for="node-config-input-useLegacy"><i class="fa fa-plug"></i> Legacy Mode</label>
+        <input type="checkbox" id="node-config-input-useLegacy" style="display:inline-block; width:auto; vertical-align:top;">
+        <label for="node-config-input-useLegacy" style="width:auto">Use WS port 8001 (older TVs without token auth)</label>
+    </div>
+
+    <div class="form-row">
+        <label for="node-config-input-enableLogging"><i class="fa fa-bug"></i> Debug Logging</label>
+        <input type="checkbox" id="node-config-input-enableLogging" style="display:inline-block; width:auto; vertical-align:top;">
+        <label for="node-config-input-enableLogging" style="width:auto">Enable verbose logging to Node-RED log</label>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="samsung-tv-config">
+    <p>Shared connection configuration for a Samsung Tizen TV.</p>
+
+    <h3>Settings</h3>
+    <dl class="message-properties">
+        <dt>IP Address <span class="property-type">required</span></dt>
+        <dd>Local IP of the TV. Assign a static IP or DHCP reservation so it never changes.</dd>
+
+        <dt>Client Name</dt>
+        <dd>The name shown to you on the TV's pairing dialog. Defaults to <code>NodeRED</code>.</dd>
+
+        <dt>MAC Address</dt>
+        <dd>Required for Wake-on-LAN. Find it in the TV's network settings.</dd>
+
+        <dt>Pairing Token</dt>
+        <dd>
+            Leave blank initially. On first connection the TV will show a pairing dialog on screen.
+            Accept it with the TV remote and the token will be saved here automatically.
+        </dd>
+
+        <dt>Legacy Mode</dt>
+        <dd>
+            Enable for older Samsung TVs (pre-2018) that use plain WebSocket on port 8001 without
+            token authentication.
+        </dd>
+    </dl>
+</script>
